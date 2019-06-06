@@ -1,0 +1,21 @@
+{
+  "name": "labmda-to-sqs",
+  "version": "1.0.0",
+  "description": "nothing to see here",
+  "main": "index.js",
+  "dependencies": {
+    "adm-zip": "^0.4.13",
+    "aws-sdk": "^2.462.0",
+    "concat-stream": "^2.0.0",
+    "csv-parser": "^2.3.0",
+    "http": "0.0.0",
+    "moment": "^2.24.0",
+    "unzipper": "^0.9.15"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eric Schoettle",
+  "license": "ISC"
+}
