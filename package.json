@@ -8,6 +8,7 @@
     "aws-sdk": "^2.462.0",
     "concat-stream": "^2.0.0",
     "csv-parser": "^2.3.0",
+    "csv-to-json": "^0.1.2",
     "http": "0.0.0",
     "moment": "^2.24.0",
     "unzipper": "^0.9.15"
