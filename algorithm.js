@@ -51,8 +51,8 @@ class PriceScheme {
     this.battery = battery;
     this.timeLength = 1; // hours - need to implement
     this.remainingHours = data;
-    this.hourByHour = [];
   }
+
   import(){
     csv()
       .fromFile(this.path)
@@ -92,87 +92,85 @@ class PriceScheme {
   }
   plan(){ 
     // Sell first action - energy in battery
-    debugger;
     for (let i = 0; i < this.battery.stateOfCharge; i++) {
       const marginalHour = i 
       this.findNextMax(0, marginalHour);
-      // this.battery.marginalCashFlow.push({
-      //   value: this.battery.calcAccountBalance(marginalHour),
-      //   firstMove: 'sell'
-      // });
-      this.exportCurrentCapacityHour();
     }
     // Buy first action - spare capacity in battery
     for (let i = 0; i < this.battery.batteryLim - this.battery.stateOfCharge; i++) {
       const marginalHour = i + this.battery.stateOfCharge;
       this.findNextMin(0, marginalHour);
-      // this.battery.marginalCashFlow.push({
-      //   value: this.battery.calcAccountBalance(marginalHour),
-      //   firstMove: 'buy'
-      // })
-      this.exportCurrentCapacityHour();
     }
-    debugger;
-    // this.exportPlan();
+    return this.remainingHours
   }
   exportPlan(){
-    const dataToExport = {
-      log: this.hourByHour,
-      accountBalance: this.battery.calcAccountBalance(),
-      stateOfCharge: this.battery.calcStateOfCharge()
-    };
-    fs.writeFileSync(outputFileName, JSON.stringify(this.hourByHour))
+    fs.writeFileSync(outputFileName, JSON.stringify(this.remainingHours))
   }
-  findNextMax(i, marginalHour){ // presumes upward slope
-    while (i < this.remainingHours.length && !this.isMax(i)) {
-      i++
+  skipHoursWithTransactions(index) {
+    while (index < this.remainingHours.length && this.remainingHours[index].transaction !== undefined) {
+      index++
     }
-    this.sell(i, marginalHour); 
-
-    if (i + 1 < this.remainingHours.length) {
-      this.findNextMin(i, marginalHour);
+    return index;
+  }
+  findNextMax(currIndex, marginalHour){ // presumes upward slope
+    let isMax = false;
+    let price, nextPrice;
+    // make sure current index doesn't have a transaction on it - if so, find the next available one
+    currIndex = this.skipHoursWithTransactions(currIndex)
+    // while not min, advance index. 
+    while (currIndex < this.remainingHours.length && !isMax) {
+      price = this.remainingHours[currIndex].price;
+      // Find index of next unassigned hour
+      let nextIndex = currIndex + 1;
+      // skip over any hour that already has a transaction on it
+      nextIndex = this.skipHoursWithTransactions(nextIndex);
+      // check not at end
+      nextPrice = (nextIndex < this.remainingHours.length) ? this.remainingHours[nextIndex].price : 0;
+      // set isMax
+      isMax = parseFloat(price) > parseFloat(nextPrice);
+      if (isMax) {
+        this.sell(currIndex, marginalHour); 
+      }
+      // advance current index to next index
+      currIndex = nextIndex;
+    }
+    
+    // Find next (opposite) inflection point. 
+    if (currIndex + 1 < this.remainingHours.length) {
+      this.findNextMin(currIndex, marginalHour);
     } 
   }
-  findNextMin(i, marginalHour){
-    while (i < this.remainingHours.length && !this.isMin(i)) {
-      i++
-    }
-    this.buy(i, marginalHour);
 
-    if (i + 1 < this.remainingHours.length) {
-      this.findNextMax(i, marginalHour);
-    }
-  }
-  isMax(i) { 
-    // pointer issues with i?
-    // Can I assume that i'm on an upward trajectory, and call it max if the next one is less?
-    // const prevPrice = (i - 1 >= 0) ? this.remainingHours[i - 1].price : 0;
-    const price = this.remainingHours[i].price;
-    // Find index of next unassigned hour
-    i++
-    while (i < this.remainingHours.length && this.remainingHours[i].transaction !== undefined) {
-      i++
-    }
-    // check not at end
-    const nextPrice = (i < this.remainingHours.length) ? this.remainingHours[i].price : 0;
-    return parseFloat(price) > parseFloat(nextPrice);
-  }
-  isMin(i) {
-    // const prevPrice = (i - 1 >= 0) ? this.remainingHours[i - 1].price : Infinity;
-    const price = this.remainingHours[i].price;
-    // Find index of next unassigned hour
-    debugger;
-    i++
-    while (i < this.remainingHours.length && this.remainingHours[i].transaction !== undefined) {
-      i++
+
+  findNextMin(currIndex, marginalHour){
+    let isMin = false;
+    let price, nextPrice;
+    // make sure current index doesn't have a transaction on it - if so, find the next available one
+    currIndex = this.skipHoursWithTransactions(currIndex)
+    // while not min, advance index. 
+    while (currIndex < this.remainingHours.length && !isMin) {
+      price = this.remainingHours[currIndex].price;
+      // Find index of next unassigned hour
+      let nextIndex = currIndex + 1;
+      // skip over any hour that already has a transaction on it
+      nextIndex = this.skipHoursWithTransactions(nextIndex);
+      // check not at end
+      nextPrice = (nextIndex < this.remainingHours.length) ? this.remainingHours[nextIndex].price : 0;
+      // set isMin
+      isMin = parseFloat(price) < parseFloat(nextPrice);
+      if (isMin) {
+        this.buy(currIndex, marginalHour); 
+      }
+      // advance current index to next index
+      currIndex = nextIndex;
     }
 
-    // Grab price, or if at end, assume infinity (still good assumption?)
-    const nextPrice = (i < this.remainingHours.length) ? this.remainingHours[i].price : Infinity;
-    return parseFloat(price) < parseFloat(nextPrice);
+    if (currIndex + 1 < this.remainingHours.length) {
+      this.findNextMax(currIndex, marginalHour);
+    }
   }
+
   buy(index, marginalHour){
-    console.log(`bought @ index ${index}, marginalHour ${marginalHour}, price ${price}`)
     this.remainingHours[index] = {
       ...this.remainingHours[index],
       transaction: 'buy',
@@ -180,7 +178,6 @@ class PriceScheme {
     }
   }
   sell(index, marginalHour){
-    console.log(`sold @ index ${index}, marginalHour ${marginalHour}, price ${price}`)
     this.remainingHours[index] = {
       ...this.remainingHours[index],
       transaction: 'sell',
@@ -189,13 +186,12 @@ class PriceScheme {
   }
 }
 
-
 const algorithm = (priceDataArray, stateOfCharge = 0, batterylim = 3)=>{
-  let battery = new Battery(stateOfCharge, batterylim)
+  let battery = new Battery(stateOfCharge, batterylim);
   let priceScheme = new PriceScheme(battery, `${filepath}/${inputFileName}`, priceDataArray); // should be able to get rid of the filepath/local stuff
   // priceScheme.import();
-  priceScheme.plan();
-  battery.sortLog();
+  return priceScheme.plan();
+  // battery.sortLog();
 }
 
 module.exports = algorithm;
