@@ -115,7 +115,7 @@
 
 
 const AWS = require('aws-sdk');
-const dynamoDB = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+const dynamoDB = new AWS.DynamoDB({apiVersion: '2012-08-10', region: 'us-east-1' });
 const http = require('http');
 const csv = require('csv-parser');
 const unzipper = require('unzipper');
@@ -180,26 +180,30 @@ const fetchAndTransform = async (event) => {
                   return new Date(prev.startTimeGMT) - new Date(curr.startTimeGMT)
                 })
                 // add prices
-                let test = algorithm(hours, 0, 3);
-
+                hours = algorithm(hours, 0, 3);
+                debugger;
                 // PUT to dynamoDB
-                for (let i = 0; i < days.length; i++) {
+                for (let i = 0; i < hours.length; i++) {
                   if (i % 24 === 24 - 1) { // full day
-                    let day = days.slice(i - 23, i + 1)
-                    debugger;
+                    let day = hours.slice(i - 23, i + 1)
                     const createDate = moment().format();
                     let putBatch = day.map(hour=>{
+                      let item = {
+                        'nodeId': {S: hour.nodeId},
+                        'date': {S: hour.date},
+                        'operatingHour': {N: hour.operatingHour},
+                        'startTimeGMT': {S: hour.startTimeGMT},
+                        'endTimeGMT': {S: hour.endTimeGMT},
+                        'price': {N: hour.price},
+                        'duration': {N: '60'},
+                        'createDate': {S: createDate},
+                      }
+                      if (hour.transaction) {
+                        item.marginalHour = {N: hour.marginalHour.toString()};
+                        item.transaction = {S: hour.transaction};
+                      }
                       return {PutRequest: {
-                        Item: {
-                          'nodeId': {S: hour.nodeId},
-                          'date': {S: hour.date},
-                          'operatingHour': {N: hour.operatingHour},
-                          'startTimeGMT': {S: hour.startTimeGMT},
-                          'endTimeGMT': {S: hour.endTimeGMT},
-                          'price': {N: hour.price},
-                          'duration': {N: '60'},
-                          'createDate': {S: createDate}
-                        }
+                        Item: item
                       }}
                     });
                     putBatchCount++
