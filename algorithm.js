@@ -53,6 +53,7 @@ class PriceScheme {
     this.remainingHours = data;
   }
 
+  // legacy - works for having local files
   import(){
     csv()
       .fromFile(this.path)
@@ -61,6 +62,7 @@ class PriceScheme {
 
     })
   }
+  // legacy - works for having local files
   formatImport(jsonObj) {
     const energyPrice = jsonObj.filter((hour) => {
       return hour.XML_DATA_ITEM === 'LMP_ENE_PRC'
@@ -86,6 +88,8 @@ class PriceScheme {
     // let twentyFourHours = this.remainingHours.concat(this.battery.log).sort((prev, curr)=> prev.operatingHour - curr.operatingHour);
     // console.log(JSON.stringify(twentyFourHours));
   }
+
+  // legacy - works for having local files
   exportCurrentCapacityHour(){
     let twentyFourHours = this.remainingHours.concat(this.battery.log).sort((prev, curr)=> prev.operatingHour - curr.operatingHour);
     this.hourByHour.push(twentyFourHours);
@@ -103,6 +107,7 @@ class PriceScheme {
     }
     return this.remainingHours
   }
+  // legacy - works for having local files
   exportPlan(){
     fs.writeFileSync(outputFileName, JSON.stringify(this.remainingHours))
   }

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
+
+// to upload to AWS, commont out the console log, and then  :
 //zip -r index.zip *
 //aws lambda update-function-code --function-name FetchCAISOAndPushToSQS --zip-file fileb://index.zip
 
 
+// to run locally, use debugger. 
 
 
 const AWS = require('aws-sdk');
