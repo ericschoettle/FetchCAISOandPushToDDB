@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "adm-zip": "^0.4.13",
-    "aws-sdk": "^2.462.0",
+    "aws-sdk": "^2.814.0",
     "concat-stream": "^2.0.0",
     "csv-parser": "^2.3.0",
     "csv-to-json": "^0.1.2",
