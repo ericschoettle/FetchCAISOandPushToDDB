@@ -10,7 +10,7 @@
     "csv-parser": "^2.3.0",
     "csv-to-json": "^0.1.2",
     "http": "0.0.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "unzipper": "^0.9.15"
   },
   "devDependencies": {},
